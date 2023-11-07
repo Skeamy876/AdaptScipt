@@ -13,141 +13,119 @@
 %union{
     int intVal;
     float floatVal;
+    char charVal;
     char* strVal;
 }
 
-%token INT STRING FLOAT ADAPT RETURN FOR IF WHILE ELSE TRUE FALSE FUNC UNARY ADD SUB DIV MUL OR LE GE EQ NE GT LT PRINT ACCEPT
+%token INT STRING FLOAT CHAR ADAPT RETURN FOR IF WHILE ELSE TRUE FALSE 
+FUNC UNARY ADD SUB DIV MUL OR LE GE EQ NE GT LT PRINT ACCEPT VOID INIT 
 
 %token <intVal> INT_VALUE
 %token <floatVal> FLOAT_VALUE
 %token <strVal> STRING_VALUE
+%token <charVal> CHAR_VALUE
 %token <strVal> IDENTIFIER
 
-%type <strVal> func_decl
-%type <strVal> decl
-%type <strVal> expr
-%type <strVal> datatype
-%type <strVal> arithmetic
-%type <strVal> statement
-%type <strVal> condition
-%type <strVal> else
-
+%start  programStart datatype arithmetic statement condition else methodinit methodbody
 %left '+' '-'
 %left '*' '/'
 
 %%
 
 /*
-samples:
-int num = 3-done
-
-for(i=0,i<num, i++){
-  //code block
-}
-
-adap count=0
-while(count<=num){
-  //code block
-  count++
-}
-
-if(i<num){
-  print("hi")
-}else-if(i==0){
-  adap num =accept()
-}else{
-  prrint("bye")
-}
-
-func addnum(int num, int num2)int {
-  adap sum=num + num2-done
-  return sum
-}
+    This would be the main starting function for the language
+    func init(){
+      
+    }
 */
-decl: decl expr
-  |expr
-  |datatype expr
-  |func_decl
-  ;
 
+programStart: FUNC INIT'(' ')''{' statement '}' ;
 
+statement: statement
+    | methodinit methodbody
+    | condition
+    | arithmetic
+    | loop
+    | PRINT'(' STRING_VALUE')'
+    | PRINT'(' IDENTIFIER')'
+    | PRINT'(' INT_VALUE')'
+    | PRINT'(' FLOAT_VALUE')'
+    | PRINT'(' CHAR_VALUE')'
+    | ACCEPT'(' INT_VALUE')'
+    | ACCEPT'(' FLOAT_VALUE')'
+    | ACCEPT'(' CHAR_VALUE')'
+    | ACCEPT'(' STRING_VALUE')'
+    ;
 
-/*support for only one or two parameters*/
-func_decl: FUNC IDENTIFIER'('datatype_list')'datatype '{'expr'}'
-  |
-  ;
+methodinit: IDENTIFIER'('parameters ')' ':' datatype'{' methodbody '}' ;
+parameters: parameterList
+          | /* Empty */
+          ;
 
-datatype_list: datatype IDENTIFIER
-  | datatype IDENTIFIER ',' datatype IDENTIFIER
-  |
-  ;
-            
+parameterList: parameter 
+            |parameterList ',' parameter
+            ;
+
+parameter: datatype IDENTIFIER;
+
+methodbody: methodbody 
+          | statement
+          | condition
+          | arithmetic
+          | RETURN IDENTIFIER
+          | RETURN value
+          ;
+
 datatype: INT
-  |STRING
-  |FLOAT
-  |ADAPT
-  ;
+    |FLOAT
+    |STRING
+    |CHAR
+    |ADAPT
+    |VOID
+    ;
+    
+condition: IF condition'{' statement '}' 
+         | IF condition'{' statement '}' ELSE'{' statement '}'
+         |IF '{' statement '}'
+         |IF '{' statement '}' ELSE'{' statement '}'
+         ;
 
-expr: FOR '('statement ';' condition ';' statement ')' '{' expr'}'
-  |WHILE '('condition')' '{'expr statement'}'
-  |IF '('condition')' '{'expr'}' else
-  |statement
-  |expr expr
-  |PRINT'('STRING_VALUE')'
-  |IDENTIFIER '=' ACCEPT'('')'
-  ;
+arithmetic: datatype IDENTIFIER
+          | datatype IDENTIFIER '=' value
+          | IDENTIFIER '=' value
+          | IDENTIFIER EQ value
+          | IDENTIFIER EQ IDENTIFIER
+          | value ADD value
+          | value SUB value
+          | value MUL value
+          | value DIV value
+          | value OR value
+          | value LE value
+          | value GE value
+          | value EQ value
+          | value NE value
+          | value GT value
+          | value LT value
+          | UNARY value
+          | value UNARY
+          ;
 
+loop: whileLoop
+    | forLoop
+    ;
 
-else: ELSE '{'expr'}'
-  |
-  ;
+forLoop: FOR'('arithmetic';' condition';' arithmetic')''{' statement '}';
 
-condition: value relop value 
-| TRUE 
-| FALSE
-;
-
-
-statement: datatype IDENTIFIER init 
-| IDENTIFIER '=' expression 
-| IDENTIFIER relop expression
-| IDENTIFIER UNARY 
-| UNARY IDENTIFIER
-;
-
-init: '=' value 
-|
-;
-
-expression: expression arithmetic expression
-| value
-;
-
-arithmetic: ADD 
-| SUB 
-| MUL
-| DIV
-;
-
-relop: LT
-| GT
-| LE
-| GE
-| EQ
-| NE
-;
+whileLoop: WHILE'(' condition')''{' statement '}';
 
 value: INT_VALUE
-| FLOAT_VALUE
-| STRING_VALUE
-| IDENTIFIER
-;
-
-return: RETURN value ';' 
-|
-;
-
-
+     | FLOAT_VALUE
+     | CHAR_VALUE
+     | STRING_VALUE
+     | IDENTIFIER
+     | TRUE
+     | FALSE
+     ;
 %%
 int main(){
   yyparse();
