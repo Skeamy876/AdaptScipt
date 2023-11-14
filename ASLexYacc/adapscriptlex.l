@@ -1,7 +1,9 @@
 %{
-    #include "y.tab.h"    
+    #include "y.tab.h"
+    void yyerror (char *s);
+    int yylex();   
+    int lineNumber= 1;
 %}
-%option yylineno
 unary "++"|"--"
 %%
 "int"                       {return INT;}
@@ -38,20 +40,20 @@ unary "++"|"--"
 
 [-]?[0-9]+                {strcpy.intVal = atoi(yytext); return INT_VALUE;}
 [-]?[0-9]*\.?[0-9]+       {strcpy.floatVal = atof(yytext); return FLOAT_VALUE;}
-[a-zA-Z]                  {strcpy.strVal = yytext; return STRING_VALUE;}
-[a-zA-Z]                  {strcpy.charVal = yytext; return CHAR_VALUE;}
+[a-zA-Z]+                 {
+                             if (strlen(yytext) == 1) {
+                                 strcpy(charVal, yytext);
+                                 return CHAR_VALUE;
+                             } else {
+                                 strcpy(strVal, yytext);
+                                 return STRING_VALUE;
+                             }
+                           }
 [a-zA-Z]([a-zA-Z]|[-]?[0-9]+)* {return IDENTIFIER;}
-\n                          {yylineno++;}
+\n                          {lineNumber++;}
 [ \t\r\v\f]                 {return WHITESPACE} 
 "/""*"(.|\n)*"*""/"         {return COMMENTS}
 %%
-int yywrap(){
-}
-
-/*Methods for symbol table, we are implementing a block structure pl so 
-: insert, lookup, set and reset are neeeded
-*/
-
-main(){
-    yylex();
+int yywrap(void){
+    return 1;
 }
